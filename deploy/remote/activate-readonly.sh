@@ -11,7 +11,7 @@ fi
 
 SOURCE=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)
 CREDENTIAL_SOURCE=${IOU_AI_CREDENTIAL_SOURCE:-/home/saedyn/iou-ai-credentials}
-VERSION=0.1.38
+VERSION=0.1.39
 TARGET_RELEASE=/opt/iou-ai/releases/$VERSION
 
 sh "$SOURCE/deploy/remote/install.sh"

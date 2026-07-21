@@ -5,6 +5,18 @@ def _one_line(value: str) -> str:
     return " ".join(value.split())
 
 
+def test_planner_is_taught_the_rules_that_actually_rejected_a_live_run() -> None:
+    # 2026-07-21: the first unattended planner run was rejected by the validator
+    # for (a) step ring_ref not matching the program ring_profile_id -- a rule the
+    # prompt never stated at all -- and (b) a BUFFER_SELECT step whose buffer group
+    # had no matching prior provide_buffers, because the prompt never said HOW the
+    # group is derived. Both are guidance-only; the validator still enforces them
+    # independently. Without this the lane fails every cycle and produces nothing.
+    prompt = _one_line(PLANNER_INSTRUCTIONS)
+    assert "ring_ref to exactly its own program's ring_profile_id" in prompt
+    assert "buffer_group = sum(flag bit_values) >> 4" in prompt
+
+
 def test_gate_a_planner_emits_only_unordered_research_priorities() -> None:
     prompt = _one_line(PLANNER_INSTRUCTIONS)
     assert "may either abstain or return an analysis-only proposal" in prompt

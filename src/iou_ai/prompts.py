@@ -41,8 +41,12 @@ Linked requests need a successor; drain needs prior work; link_timeout must
 immediately follow a linked request. timeout_remove and timeout_update refer to
 a prior timeout with user_data 8; poll_remove and poll_update refer to a prior
 poll_add with user_data 6; cancel names a prior operation selector.
-BUFFER_SELECT needs a prior provide_buffers with the buffer group implied by the
-selected SQE flags. The disabled_until_register profile must begin with
+Set every step's ring_ref to exactly its own program's ring_profile_id: a step may
+never reference a different ring profile than the program that contains it.
+BUFFER_SELECT needs a prior provide_buffers whose buffer_group argument equals the
+group implied by the selected SQE flags, computed as the sum of that step's flag
+bit values shifted right by four (buffer_group = sum(flag bit_values) >> 4).
+The disabled_until_register profile must begin with
 register_raw opcode 12. Do not use iosqe_fixed_file in compiler v1. List the steps
 in execution order and set each step's ordinal to its zero-based index in the
 steps list: the first step has ordinal 0, the next 1, then 2, with no gaps or
