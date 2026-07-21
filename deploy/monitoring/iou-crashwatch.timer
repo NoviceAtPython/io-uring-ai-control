@@ -1,0 +1,11 @@
+[Unit]
+Description=Watch for new io_uring kernel crashes and fleet degradation
+
+[Timer]
+OnBootSec=5m
+OnUnitActiveSec=10m
+Persistent=true
+Unit=iou-crashwatch.service
+
+[Install]
+WantedBy=timers.target

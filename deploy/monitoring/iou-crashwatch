@@ -1,0 +1,101 @@
+#!/bin/sh
+# 10-minute watcher. Pages on new GOLD/other crashes (deduped by root cause),
+# fleet degradation, and SUSTAINED AI-lane failure (no planner success in 6h /
+# budget cap / kill switch). A self-healing intermittent failure does NOT page.
+set -u
+T=/root/fuzzer_workspace/nyx_targets/nat_out
+STATE=/var/lib/iou-ai-execution/crashwatch
+SEEN_INPUT=$STATE/seen-crashes
+SEEN_CAUSE=$STATE/seen-rootcauses
+GOOD=$STATE/last-planner-good
+FLAG=/home/saedyn/CRASH_FOUND.txt
+mkdir -p "$STATE"; touch "$SEEN_INPUT" "$SEEN_CAUSE"
+NOW=$(date +%s)
+
+kernel_report() {
+    journalctl -u "mw$1" --since '-45 min' --no-pager 2>/dev/null | \
+        grep -iE 'KASAN|BUG:|kernel panic|general protection|use-after-free|out-of-bounds|refcount_t|WARNING: at|null pointer' | \
+        grep -viE 'kasan\.fault=panic|console=|root=' | tail -25
+}
+grade() {
+    case "$1" in
+        *use-after-free*|*Use-after-free*) echo "GOLD:use-after-free";;
+        *slab-out-of-bounds*) echo "GOLD:slab-out-of-bounds";;
+        *global-out-of-bounds*) echo "GOLD:global-out-of-bounds";;
+        *stack-out-of-bounds*) echo "GOLD:stack-out-of-bounds";;
+        *out-of-bounds*) echo "GOLD:out-of-bounds";;
+        *double-free*|*invalid-free*) echo "GOLD:invalid-free";;
+        *"general protection"*) echo "GOLD:gpf";;
+        *refcount_t*) echo "GOLD:refcount";;
+        *"kernel BUG at"*) echo "GOLD:kernel-BUG";;
+        *KASAN*) echo "GOLD:kasan-other";;
+        *"kernel panic"*) echo "SILVER:panic";;
+        *"null pointer"*) echo "SILVER:null-deref";;
+        *"WARNING: at"*) echo "SILVER:warning";;
+        "") echo "UNGRADED:no-kernel-log";;
+        *) echo "UNGRADED:unrecognised";;
+    esac
+}
+signature() {
+    printf '%s' "$1" | grep -oiE '(KASAN: [a-z-]+|BUG: [a-zA-Z ]+|general protection|refcount_t)[^\n]*in [a-zA-Z0-9_]+' | head -1 \
+      || printf '%s' "$1" | head -c 120
+}
+
+NEWGOLD=0; NEWOTHER=0; GOLDMSG=""
+for c in $(find "$T" -path '*/crashes/*' -type f ! -name 'README*' 2>/dev/null); do
+    H=$(sha256sum "$c" 2>/dev/null | cut -d' ' -f1); [ -n "$H" ] || continue
+    grep -q "^$H" "$SEEN_INPUT" 2>/dev/null && continue
+    echo "$H $c" >> "$SEEN_INPUT"
+    W=$(echo "$c" | sed -n 's#.*/nat_out/\([0-9]*\)/.*#\1#p'); [ -n "$W" ] || W=0
+    REPORT=$(kernel_report "$W"); G=$(grade "$REPORT"); SIG=$(signature "$REPORT")
+    SIGH=$(printf '%s|%s' "$G" "$SIG" | sha256sum | cut -d' ' -f1)
+    { echo "=== $(date -Is) crash [$G] worker=$W ==="; echo "input : $c"; echo "sha256: $H"
+      echo "bytes : $(xxd -p "$c" 2>/dev/null | tr -d '\n' | head -c 400)"; echo "signature: $SIG"
+      echo "--- kernel output ---"; echo "$REPORT"; echo; } >> "$FLAG"
+    grep -q "^$SIGH" "$SEEN_CAUSE" 2>/dev/null && continue
+    echo "$SIGH $G $SIG" >> "$SEEN_CAUSE"
+    case "$G" in GOLD*) NEWGOLD=$((NEWGOLD+1)); GOLDMSG="$GOLDMSG
+[$G] worker $W :: $SIG";; *) NEWOTHER=$((NEWOTHER+1));; esac
+done
+[ -e "$FLAG" ] && chown saedyn:saedyn "$FLAG" 2>/dev/null
+[ "$NEWGOLD" -gt 0 ] && /usr/local/bin/iou-alert "*** GOLD *** io_uring KERNEL MEMORY-SAFETY BUG on fuzz.eecs.umich.edu
+$NEWGOLD new distinct root cause(s):$GOLDMSG
+
+DO NOT restart or clean the fleet. Preserve nat_out/*/crashes/ and the mw* journals.
+Full detail: sudo cat /home/saedyn/CRASH_FOUND.txt"
+[ "$NEWOTHER" -gt 0 ] && /usr/local/bin/iou-alert "io_uring fuzzer: $NEWOTHER new NON-gold crash root cause(s). Worth a look, not urgent: sudo cat /home/saedyn/CRASH_FOUND.txt"
+
+# fleet health
+W=$(pgrep -c -x afl-fuzz); LAST=$(cat "$STATE/last-worker-count" 2>/dev/null || echo 10)
+echo "$W" > "$STATE/last-worker-count"
+if [ "$W" -lt 10 ] && [ "$LAST" -lt 10 ]; then
+    [ -e "$STATE/degraded-alerted" ] || { touch "$STATE/degraded-alerted"
+        /usr/local/bin/iou-alert "io_uring FUZZER DEGRADED: only $W/10 workers on fuzz.eecs.umich.edu. Check: sudo systemctl status iou-fleet.service"; }
+elif [ "$W" -ge 10 ]; then rm -f "$STATE/degraded-alerted"; fi
+
+# AI lane: page only on SUSTAINED failure, not a self-healing blip
+[ -f "$GOOD" ] || echo "$NOW" > "$GOOD"
+[ "$(systemctl show -p Result --value iou-ai-shadow.service 2>/dev/null)" = "success" ] && echo "$NOW" > "$GOOD"
+AI_PROBLEM=""
+if systemctl is-enabled --quiet iou-ai-shadow.timer 2>/dev/null; then
+    LG=$(cat "$GOOD" 2>/dev/null || echo "$NOW"); AGE=$((NOW - LG))
+    if [ "$AGE" -gt 21600 ]; then
+        ERR=$(journalctl -u iou-ai-shadow.service --since '-7 h' --no-pager 2>/dev/null | grep -m1 -oE 'blocked:.*' | head -c 200)
+        AI_PROBLEM="$AI_PROBLEM
+- planner has not succeeded in $((AGE/3600))h (intermittent failures self-heal; this means it is genuinely stuck). last: ${ERR:-see journalctl -u iou-ai-shadow}"
+    fi
+fi
+BUD=$(/opt/iou-ai/current/.venv/bin/iou-ai --config /etc/iou-ai/config.toml budget-status 2>/dev/null)
+echo "$BUD" | grep -qiE '"(monthly|daily)_exhausted": *true|"warning_level": *"exhausted"' && AI_PROBLEM="$AI_PROBLEM
+- AI budget cap reached; no further planning until it resets"
+[ -e /var/lib/iou-ai/runtime/AI_CALLS_DISABLED ] && AI_PROBLEM="$AI_PROBLEM
+- AI_CALLS_DISABLED kill switch is ON"
+if [ -n "$AI_PROBLEM" ]; then
+    if [ ! -e "$STATE/ai-alerted" ] || [ "$(find "$STATE/ai-alerted" -mmin +1440 2>/dev/null)" ]; then
+        touch "$STATE/ai-alerted"
+        /usr/local/bin/iou-alert "io_uring AI LANE needs attention on fuzz.eecs.umich.edu:$AI_PROBLEM
+
+The fuzzer itself keeps running. Check: sudo iou-status"
+    fi
+else rm -f "$STATE/ai-alerted"; fi
+echo "crashwatch: gold=$NEWGOLD other=$NEWOTHER workers=$W ai_problem=$([ -n "$AI_PROBLEM" ] && echo yes || echo no)"

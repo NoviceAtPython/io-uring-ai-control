@@ -1,0 +1,30 @@
+#!/bin/sh
+# One command to see everything. Does not depend on Telegram. Run: sudo iou-status
+T=/root/fuzzer_workspace/nyx_targets/nat_out
+echo "=== FLEET ==="
+echo "iou-fleet: $(systemctl is-active iou-fleet.service)   workers: $(pgrep -c -x afl-fuzz)/10"
+for w in $(ls $T 2>/dev/null | grep -E '^[0-9]+$' | sort -n); do
+    printf "  w%-2s " "$w"
+    awk -F': *' '/^edges_found|^execs_done|^saved_crashes/{printf "%s=%s ", $1,$2}' $T/$w/fuzzer_stats 2>/dev/null
+    echo
+done
+echo "=== CRASHES (the whole point) ==="
+find $T -path '*/crashes/*' -type f ! -name 'README*' 2>/dev/null | wc -l | sed 's/^/  crash files: /'
+find $T -path '*/crashes/*' -type f ! -name 'README*' 2>/dev/null | head -5
+echo "=== AI LANE ==="
+echo "shadow timer: $(systemctl is-active iou-ai-shadow.timer)  auto timer: $(systemctl is-active iou-ai-auto.timer)"
+echo "last shadow : $(systemctl show -p ExecMainStartTimestamp --value iou-ai-shadow.service)"
+echo "last auto   : $(systemctl show -p ExecMainStartTimestamp --value iou-ai-auto.service) (result: $(systemctl show -p Result --value iou-ai-auto.service))"
+echo "quarantined envelopes : $(ls /var/lib/iou-ai/quarantine 2>/dev/null | wc -l)"
+echo "candidates awaiting    : $(ls /var/lib/iou-ai-execution/candidates 2>/dev/null | wc -l)"
+echo "=== PROMOTED SEEDS (AI output the fuzzer is using) ==="
+ls -1 /var/lib/iou-ai-execution/sync/native_ai_sync/ 2>/dev/null | sed 's/^/  /'
+echo "  receipts: $(ls /var/lib/iou-ai-execution/promotion-receipts 2>/dev/null | wc -l)"
+echo "  ingested by fleet: $(ls -1 $T/0/queue 2>/dev/null | grep -c 'sync:native_ai_sync')"
+echo "=== DECISION SIGNERS (auto vs human) ==="
+for f in /var/lib/iou-ai-decisions/archive/*.json; do [ -f "$f" ] || continue; grep -o '"signer_id":"[^"]*"' "$f" 2>/dev/null; done | sort | uniq -c
+echo "=== BUDGET ==="
+/opt/iou-ai/current/.venv/bin/iou-ai --config /etc/iou-ai/config.toml budget-status 2>/dev/null | grep -E 'charged_usd|remaining_usd|warning_level' | head -3
+echo "=== KILL SWITCHES ==="
+echo "  stop paid AI + auto : sudo touch /var/lib/iou-ai/runtime/AI_CALLS_DISABLED"
+echo "  stop auto-promote   : sudo touch /var/lib/iou-ai/runtime/AUTO_PROMOTE_DISABLED"

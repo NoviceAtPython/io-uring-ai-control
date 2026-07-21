@@ -1,0 +1,9 @@
+[Unit]
+Description=io_uring fuzzer crash + fleet-health watcher
+
+[Service]
+Type=oneshot
+User=root
+ExecStart=/usr/local/bin/iou-crashwatch
+Nice=19
+TimeoutStartSec=2min
