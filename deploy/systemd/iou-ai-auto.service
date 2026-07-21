@@ -23,7 +23,13 @@ ExecStart=/opt/iou-ai/current/deploy/remote/auto_cycle.sh
 # quarantine/artifacts and writes the execution authority tree + sync inbox.
 PrivateNetwork=true
 RestrictAddressFamilies=AF_UNIX
-ProtectHome=true
+# NOT ProtectHome=true: the isolated canary's config.ron still resolves its kernel
+# config through an absolute path into /root/fuzzer_workspace (the live fleet
+# tree), so masking /root makes libnyx fail with "default config not found" and
+# the VM never boots. read-only keeps /root readable while blocking writes to it.
+# (Longer term the isolated snapshot should carry its own copy of that .ron so the
+# canary is truly filesystem-independent of the live fleet.)
+ProtectHome=read-only
 NoNewPrivileges=true
 ProtectKernelModules=true
 ProtectClock=true

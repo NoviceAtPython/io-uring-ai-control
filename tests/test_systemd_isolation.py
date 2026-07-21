@@ -202,6 +202,12 @@ def test_auto_promote_unit_is_offline_and_killswitchable() -> None:
     assert "RestrictAddressFamilies=AF_UNIX" in unit
     assert "NoNewPrivileges=true" in unit
     assert "Type=oneshot" in unit
+    # ProtectHome must NOT be full-mask: the isolated canary reads its kernel
+    # config through /root/fuzzer_workspace, so a masked /root breaks VM boot.
+    # read-only preserves containment (no writes to home) without that breakage.
+    directives = [ln.strip() for ln in unit.splitlines() if not ln.lstrip().startswith("#")]
+    assert "ProtectHome=read-only" in directives
+    assert "ProtectHome=true" not in directives
     # Two independent kill switches: the global paid-AI one and an auto-only one.
     assert (
         "ConditionPathExists=!/var/lib/iou-ai/runtime/AI_CALLS_DISABLED" in unit
