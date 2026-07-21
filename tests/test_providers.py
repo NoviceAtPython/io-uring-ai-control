@@ -525,3 +525,41 @@ class MockAdapterTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+def test_http_error_keeps_structural_reason_but_not_content() -> None:
+    # Anthropic reports the actual fault ONLY in error.message (code/param are
+    # absent), so dropping it left the 2026-07-21 unattended run reporting a bare
+    # "invalid_request_error". The structural fault must survive -- but provider
+    # prose must STILL never be logged, so nothing is copied out of the message:
+    # it is matched against an allowlist and only recognised tokens re-emitted.
+    from iou_ai.providers.base import _safe_error_reason
+
+    assert (
+        _safe_error_reason("max_tokens: 32000 > 8192, which is the maximum allowed")
+        == "max_tokens 32000 > 8192"
+    )
+    assert _safe_error_reason("temperature: must be <= 1") == "temperature <= 1"
+    # Prose with no recognised parameter yields NOTHING.
+    assert _safe_error_reason("sensitive provider explanation must not be logged") is None
+    assert _safe_error_reason("do not log me") is None
+    # An echoed payload cannot ride along: only the field name survives.
+    assert _safe_error_reason('messages.0.content: "SECRET_PAYLOAD"') == "content messages"
+    assert _safe_error_reason(None) is None
+    assert _safe_error_reason("") is None
+
+
+def test_http_error_message_includes_the_reason() -> None:
+    from iou_ai.providers.base import ProviderHTTPError
+
+    err = ProviderHTTPError(
+        "anthropic",
+        400,
+        error_type="invalid_request_error",
+        error_reason="max_tokens: 32000 > 8192",
+        request_id="req_011CdFoy8Wbc8cYdn6XghYbL",
+    )
+    text = str(err)
+    assert "invalid_request_error" in text
+    assert "reason=max_tokens: 32000 > 8192" in text
+    assert "req_011CdFoy8Wbc8cYdn6XghYbL" in text

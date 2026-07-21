@@ -167,6 +167,7 @@ class ProviderHTTPError(ProviderError):
         error_type: str | None = None,
         error_code: str | None = None,
         error_param: str | None = None,
+        error_reason: str | None = None,
         request_id: str | None = None,
     ) -> None:
         self.provider = provider
@@ -174,6 +175,7 @@ class ProviderHTTPError(ProviderError):
         self.error_type = error_type
         self.error_code = error_code
         self.error_param = error_param
+        self.error_reason = error_reason
         self.request_id = request_id
         self.retryable = status_code in {408, 409, 429} or status_code >= 500
         details = [error_type or "unknown_error"]
@@ -181,6 +183,8 @@ class ProviderHTTPError(ProviderError):
             details.append(f"code={error_code}")
         if error_param:
             details.append(f"param={error_param}")
+        if error_reason:
+            details.append(f"reason={error_reason}")
         if request_id:
             details.append(f"request_id={request_id}")
         super().__init__(f"{provider} HTTP {status_code} ({'; '.join(details)})")
@@ -307,6 +311,7 @@ def raise_for_http_error(provider: str, response: HttpResponse) -> None:
     error_type: str | None = None
     error_code: str | None = None
     error_param: str | None = None
+    error_reason: str | None = None
     try:
         value = json.loads(response.body.decode("utf-8"))
         if isinstance(value, dict):
@@ -315,6 +320,7 @@ def raise_for_http_error(provider: str, response: HttpResponse) -> None:
                 error_type = _safe_error_token(error.get("type"))
                 error_code = _safe_error_token(error.get("code"))
                 error_param = _safe_error_token(error.get("param"))
+                error_reason = _safe_error_reason(error.get("message"))
     except (UnicodeDecodeError, json.JSONDecodeError):
         pass
 
@@ -322,6 +328,7 @@ def raise_for_http_error(provider: str, response: HttpResponse) -> None:
         "error_type": error_type,
         "error_code": error_code,
         "error_param": error_param,
+        "error_reason": error_reason,
         "request_id": _safe_error_token(
             header_value(response.headers, "request-id")
             or header_value(response.headers, "x-request-id")
@@ -342,6 +349,66 @@ def _safe_error_token(value: object) -> str | None:
     if not re.fullmatch(r"[A-Za-z0-9._:-]{1,128}", value):
         return None
     return value
+
+
+_ERROR_PARAM_NAMES = frozenset(
+    {
+        "budget_tokens",
+        "content",
+        "input",
+        "instructions",
+        "max_completion_tokens",
+        "max_output_tokens",
+        "max_tokens",
+        "messages",
+        "metadata",
+        "model",
+        "reasoning",
+        "response_format",
+        "seed",
+        "stop_sequences",
+        "stream",
+        "system",
+        "temperature",
+        "text",
+        "thinking",
+        "tool_choice",
+        "tools",
+        "top_k",
+        "top_logprobs",
+        "top_p",
+    }
+)
+
+
+def _safe_error_reason(value: object) -> str | None:
+    """Reconstruct a structural reason WITHOUT logging any provider prose.
+
+    Anthropic reports the actual fault only in ``error.message`` (e.g. "max_tokens:
+    32000 > 8192 ..."), leaving ``code`` and ``param`` empty. Discarding it made
+    every 400 undiagnosable, which is untenable for an unattended pipeline -- but
+    this module deliberately never logs provider explanations, because they can
+    echo request or response content.
+
+    So nothing is copied out of the message. Instead the message is *matched*
+    against a fixed allowlist of API parameter names plus numeric comparisons, and
+    only those recognised tokens are re-emitted. Free-form prose yields None.
+    """
+
+    if not isinstance(value, str) or not value:
+        return None
+    collapsed = " ".join(value.split())
+    found: list[str] = []
+    for name in sorted(_ERROR_PARAM_NAMES):
+        if re.search(rf"\b{re.escape(name)}\b", collapsed):
+            found.append(name)
+    for comparison in re.findall(
+        r"\d+\s*(?:[<>]=?|==?)\s*\d+|(?:[<>]=?)\s*\d+", collapsed
+    ):
+        found.append(" ".join(comparison.split()))
+    if not found:
+        return None
+    return " ".join(dict.fromkeys(found))[:160]
 
 
 def required_nonnegative_int(
