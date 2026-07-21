@@ -563,3 +563,23 @@ def test_http_error_message_includes_the_reason() -> None:
     assert "invalid_request_error" in text
     assert "reason=max_tokens: 32000 > 8192" in text
     assert "req_011CdFoy8Wbc8cYdn6XghYbL" in text
+
+
+def test_billing_errors_surface_categorical_words_not_content() -> None:
+    # Funds/quota failures must be distinguishable so the operator can be paged to
+    # top up -- but still without echoing provider prose. Only categorical status
+    # words come through, never surrounding content.
+    from iou_ai.providers.base import _safe_error_reason
+
+    anthropic = _safe_error_reason(
+        "Your credit balance is too low to access the Anthropic API. "
+        "Please go to Plans & Billing to upgrade or purchase credits."
+    )
+    assert anthropic is not None
+    for w in ("credit", "balance", "billing", "low"):
+        assert w in anthropic
+    # No account-identifying or free-form content leaks.
+    assert "Anthropic API" not in anthropic and "Plans" not in anthropic
+
+    openai = _safe_error_reason("You exceeded your current quota, please check your plan")
+    assert "quota" in openai

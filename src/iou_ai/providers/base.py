@@ -380,6 +380,26 @@ _ERROR_PARAM_NAMES = frozenset(
     }
 )
 
+# Categorical status words (not content) surfaced so an operator can tell a
+# billing/quota failure from an ordinary bad request. "Your credit balance is too
+# low" -> "balance credit low"; no request or response content rides along.
+_ERROR_STATUS_TERMS = frozenset(
+    {
+        "balance",
+        "billing",
+        "credit",
+        "credits",
+        "expired",
+        "funds",
+        "insufficient",
+        "low",
+        "overloaded",
+        "payment",
+        "quota",
+        "unpaid",
+    }
+)
+
 
 def _safe_error_reason(value: object) -> str | None:
     """Reconstruct a structural reason WITHOUT logging any provider prose.
@@ -399,8 +419,8 @@ def _safe_error_reason(value: object) -> str | None:
         return None
     collapsed = " ".join(value.split())
     found: list[str] = []
-    for name in sorted(_ERROR_PARAM_NAMES):
-        if re.search(rf"\b{re.escape(name)}\b", collapsed):
+    for name in sorted(_ERROR_PARAM_NAMES | _ERROR_STATUS_TERMS):
+        if re.search(rf"\b{re.escape(name)}\b", collapsed, re.IGNORECASE):
             found.append(name)
     for comparison in re.findall(
         r"\d+\s*(?:[<>]=?|==?)\s*\d+|(?:[<>]=?)\s*\d+", collapsed

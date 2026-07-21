@@ -86,10 +86,32 @@ if systemctl is-enabled --quiet iou-ai-shadow.timer 2>/dev/null; then
     fi
 fi
 BUD=$(/opt/iou-ai/current/.venv/bin/iou-ai --config /etc/iou-ai/config.toml budget-status 2>/dev/null)
-echo "$BUD" | grep -qiE '"(monthly|daily)_exhausted": *true|"warning_level": *"exhausted"' && AI_PROBLEM="$AI_PROBLEM
-- AI budget cap reached; no further planning until it resets"
 [ -e /var/lib/iou-ai/runtime/AI_CALLS_DISABLED ] && AI_PROBLEM="$AI_PROBLEM
 - AI_CALLS_DISABLED kill switch is ON"
+
+# --- FUNDS: real provider billing/quota failure + internal monthly-cap warning ---
+# Provider account balances are NOT queryable via API, so the actionable signal is
+# a call that FAILS for billing/quota reasons (surfaced by the 0.1.42 error words).
+FUNDS=""
+RECENT=$(journalctl -u iou-ai-shadow.service --since '-90 min' --no-pager 2>/dev/null | grep -iE 'blocked:.*(insufficient|quota|billing|credit|balance|payment|funds|unpaid)')
+echo "$RECENT" | grep -qi 'openai' && FUNDS="$FUNDS
+- OpenAI API refused a call for FUNDS/QUOTA reasons (likely out of credits). Top up: platform.openai.com/settings/organization/billing"
+echo "$RECENT" | grep -qi 'anthropic' && FUNDS="$FUNDS
+- Anthropic API refused a call for FUNDS/QUOTA reasons (likely out of credits). Top up: console.anthropic.com/settings/billing"
+WL=$(echo "$BUD" | grep -o '"warning_level":[^,]*' | grep -oiE 'warning|critical|exhausted' | head -1)
+REM=$(echo "$BUD" | grep -o '"remaining_usd":[^,]*' | grep -oE '[0-9.]+' | head -1)
+[ -n "$WL" ] && FUNDS="$FUNDS
+- internal monthly budget is '$WL' (\$${REM:-?} of \$25 left) -- your self-imposed cap, not the provider balance"
+echo "$BUD" | grep -qiE '"(monthly|daily)_exhausted": *true' && FUNDS="$FUNDS
+- internal budget cap REACHED; planning paused until it resets"
+if [ -n "$FUNDS" ]; then
+    if [ ! -e "$STATE/funds-alerted" ] || [ "$(find "$STATE/funds-alerted" -mmin +720 2>/dev/null)" ]; then
+        touch "$STATE/funds-alerted"
+        /usr/local/bin/iou-alert "io_uring AI FUNDS alert on fuzz.eecs.umich.edu:$FUNDS
+
+The fuzzer keeps running regardless; only AI planning pauses until funds/cap allow."
+    fi
+else rm -f "$STATE/funds-alerted"; fi
 if [ -n "$AI_PROBLEM" ]; then
     if [ ! -e "$STATE/ai-alerted" ] || [ "$(find "$STATE/ai-alerted" -mmin +1440 2>/dev/null)" ]; then
         touch "$STATE/ai-alerted"
