@@ -1,0 +1,39 @@
+[Unit]
+Description=Read-only public io-uring lore intake
+Documentation=https://lore.kernel.org/io-uring/new.atom
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=iou-ai
+Group=iou-ai
+UMask=0077
+Environment=PYTHONDONTWRITEBYTECODE=1
+ExecStart=/opt/iou-ai/current/.venv/bin/python -m iou_ai.lkml --state-dir /var/lib/iou-ai/lkml --max-messages 25
+ReadOnlyPaths=/opt/iou-ai
+ReadWritePaths=/var/lib/iou-ai/lkml
+
+NoNewPrivileges=yes
+CapabilityBoundingSet=
+AmbientCapabilities=
+PrivateDevices=yes
+PrivateTmp=yes
+ProtectClock=yes
+ProtectControlGroups=yes
+ProtectHome=yes
+ProtectHostname=yes
+ProtectKernelLogs=yes
+ProtectKernelModules=yes
+ProtectKernelTunables=yes
+ProtectSystem=strict
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+RestrictNamespaces=yes
+RestrictRealtime=yes
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+
+[Install]
+WantedBy=multi-user.target

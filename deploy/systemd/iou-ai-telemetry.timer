@@ -1,0 +1,11 @@
+[Unit]
+Description=Build sanitized io_uring fuzz telemetry hourly
+
+[Timer]
+OnCalendar=*-*-* *:10:00
+RandomizedDelaySec=2m
+Persistent=true
+Unit=iou-ai-telemetry.service
+
+[Install]
+WantedBy=timers.target

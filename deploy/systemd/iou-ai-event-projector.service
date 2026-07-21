@@ -1,0 +1,44 @@
+[Unit]
+Description=Project verified io_uring state into redacted inert events
+After=iou-ai-telemetry.service
+ConditionPathExists=/var/lib/iou-ai/inbox/telemetry.json
+ConditionPathExists=/etc/iou-ai/config.toml
+
+[Service]
+Type=oneshot
+User=iou-ai
+Group=iou-ai
+SupplementaryGroups=iou-ai-events
+UMask=0027
+ExecStart=/opt/iou-ai/current/.venv/bin/iou-ai-events --config /etc/iou-ai/config.toml
+
+# This unit has no network or execution authority. It can read only sanitized
+# telemetry, the local budget ledger, and immutable quarantine envelopes.
+ReadOnlyPaths=/etc/iou-ai /opt/iou-ai /var/lib/iou-ai/inbox /var/lib/iou-ai/quarantine
+ReadWritePaths=/var/lib/iou-ai/runtime /var/lib/iou-ai/events
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+PrivateNetwork=true
+NoNewPrivileges=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+ProtectControlGroups=true
+ProtectClock=true
+ProtectHostname=true
+RestrictSUIDSGID=true
+RestrictRealtime=true
+LockPersonality=true
+MemoryDenyWriteExecute=true
+CapabilityBoundingSet=
+AmbientCapabilities=
+RestrictAddressFamilies=AF_UNIX
+Nice=19
+IOSchedulingClass=idle
+CPUQuota=5%
+MemoryMax=256M
+TasksMax=32
+TimeoutStartSec=2min
+

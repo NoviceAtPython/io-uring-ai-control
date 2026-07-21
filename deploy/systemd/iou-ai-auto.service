@@ -1,0 +1,41 @@
+[Unit]
+Description=io_uring AI unattended cycle (canary -> auto-approve -> promote)
+Documentation=file:///opt/iou-ai/current/README.md
+After=iou-ai-shadow.service
+# The operator kill switch stops the unattended lane exactly like it stops the
+# paid planner. Removing one file halts autonomous promotion.
+ConditionPathExists=!/var/lib/iou-ai/runtime/AI_CALLS_DISABLED
+ConditionPathExists=!/var/lib/iou-ai/runtime/AUTO_PROMOTE_DISABLED
+ConditionPathExists=/var/lib/iou-ai/contracts/harness-contract.production.json
+
+[Service]
+Type=oneshot
+# Root: the canary drives an isolated Nyx VM and the promoter writes the
+# root-owned foreign-sync inbox. Both re-verify the full authority chain
+# themselves; this unit grants no additional trust.
+User=root
+Group=root
+WorkingDirectory=/var/lib/iou-ai-execution
+UMask=0027
+ExecStart=/opt/iou-ai/current/deploy/remote/auto_cycle.sh
+
+# No network: this lane never talks to a model or a relay. It only reads local
+# quarantine/artifacts and writes the execution authority tree + sync inbox.
+PrivateNetwork=true
+RestrictAddressFamilies=AF_UNIX
+ProtectHome=true
+NoNewPrivileges=true
+ProtectKernelModules=true
+ProtectClock=true
+ProtectHostname=true
+RestrictSUIDSGID=true
+RestrictRealtime=true
+LockPersonality=true
+Nice=15
+IOSchedulingClass=idle
+# The canary boots real guest VMs; several flaky-reject retries must fit.
+TimeoutStartSec=45min
+KillSignal=SIGINT
+
+[Install]
+WantedBy=multi-user.target

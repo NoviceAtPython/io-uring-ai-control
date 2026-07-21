@@ -1,0 +1,13 @@
+[Unit]
+Description=Poll public io-uring lore on a low-impact schedule
+
+[Timer]
+OnBootSec=10min
+OnUnitActiveSec=30min
+RandomizedDelaySec=5min
+AccuracySec=1min
+Persistent=yes
+Unit=iou-ai-lkml.service
+
+[Install]
+WantedBy=timers.target

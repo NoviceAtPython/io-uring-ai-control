@@ -1,0 +1,22 @@
+[Unit]
+Description=Export allowlisted AFL++ statistics for the unprivileged AI controller
+
+[Service]
+Type=oneshot
+User=root
+Group=root
+ExecStart=/opt/iou-ai/current/deploy/remote/export-fleet-stats.sh
+UMask=0027
+Nice=19
+IOSchedulingClass=idle
+CPUQuota=5%
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadOnlyPaths=-/root/fuzzer_workspace/nat_out -/root/fuzzer_workspace/nyx_targets/nat_out /var/lib/iou-ai/contracts
+ReadWritePaths=/var/lib/iou-ai/export
+ProtectHome=read-only
+# The exporter can read the root-owned AFL statistics and atomically rotate only
+# its dedicated export tree. It has no write path into the fleet or controller.
+CapabilityBoundingSet=CAP_CHOWN CAP_DAC_READ_SEARCH
+RestrictAddressFamilies=AF_UNIX

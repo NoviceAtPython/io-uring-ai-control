@@ -1,0 +1,13 @@
+[Unit]
+Description=Periodically verify relay-signed io_uring human decisions
+
+[Timer]
+OnBootSec=6min
+OnUnitInactiveSec=2min
+RandomizedDelaySec=30s
+AccuracySec=15s
+Unit=iou-ai-decision-import.service
+
+[Install]
+WantedBy=timers.target
+

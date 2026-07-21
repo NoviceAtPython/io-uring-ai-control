@@ -1,0 +1,13 @@
+[Unit]
+Description=Periodically deliver redacted io_uring notifications
+
+[Timer]
+OnBootSec=5min
+OnUnitInactiveSec=2min
+RandomizedDelaySec=30s
+AccuracySec=15s
+Unit=iou-ai-notify.service
+
+[Install]
+WantedBy=timers.target
+

@@ -1,0 +1,51 @@
+[Unit]
+Description=io_uring AI planner/reviewer (shadow quarantine only)
+Documentation=file:///opt/iou-ai/current/README.md
+Wants=network-online.target
+After=network-online.target iou-ai-lkml.service
+ConditionPathExists=/var/lib/iou-ai/inbox/telemetry.json
+ConditionPathExists=/var/lib/iou-ai/contracts/harness-contract.production.json
+ConditionPathExists=!/var/lib/iou-ai/runtime/AI_CALLS_DISABLED
+
+[Service]
+Type=oneshot
+User=iou-ai
+Group=iou-ai
+WorkingDirectory=/var/lib/iou-ai/runtime
+UMask=0077
+LoadCredential=openai.key:/etc/iou-ai/credentials/openai.key
+LoadCredential=anthropic.key:/etc/iou-ai/credentials/anthropic.key
+ExecStart=/opt/iou-ai/current/.venv/bin/iou-ai --config /etc/iou-ai/config.toml run-if-needed
+
+# This service can write only its local ledger/quarantine and never an AFL queue.
+ReadWritePaths=/var/lib/iou-ai/runtime /var/lib/iou-ai/quarantine /var/lib/iou-ai/artifacts
+ReadOnlyPaths=/etc/iou-ai /opt/iou-ai /var/lib/iou-ai/inbox /var/lib/iou-ai/contracts
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+NoNewPrivileges=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+ProtectControlGroups=true
+ProtectClock=true
+ProtectHostname=true
+RestrictSUIDSGID=true
+RestrictRealtime=true
+LockPersonality=true
+MemoryDenyWriteExecute=true
+CapabilityBoundingSet=
+AmbientCapabilities=
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+Nice=19
+IOSchedulingClass=idle
+CPUQuota=10%
+MemoryMax=1G
+TasksMax=64
+# Up to three independent one-shot calls may run (planner, reviewer, sampled
+# auditor). Each has a five-minute client limit and no automatic retry.
+TimeoutStartSec=25min
+# Let Python unwind through the ledger's BaseException guard if the outer
+# service deadline is ever reached, so the active reservation is abandoned.
+KillSignal=SIGINT

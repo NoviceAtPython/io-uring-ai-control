@@ -1,0 +1,11 @@
+[Unit]
+Description=Hourly read-only AFL++ fleet-stat export
+
+[Timer]
+OnCalendar=hourly
+Persistent=true
+Unit=iou-ai-export.service
+
+[Install]
+WantedBy=timers.target
+

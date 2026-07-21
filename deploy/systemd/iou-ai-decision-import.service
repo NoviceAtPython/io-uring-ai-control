@@ -1,0 +1,51 @@
+[Unit]
+Description=Verify and archive relay-signed io_uring human decisions
+Documentation=file:///opt/iou-ai/current/README.md
+After=iou-ai-notify.service
+ConditionDirectoryNotEmpty=/var/lib/iou-ai-decisions/inbox
+ConditionDirectoryNotEmpty=/var/lib/iou-ai/events
+ConditionFileNotEmpty=/etc/iou-ai/credentials/decision.key
+
+[Service]
+Type=oneshot
+User=iou-ai-decision
+Group=iou-ai-decision
+SupplementaryGroups=iou-ai-events iou-ai-decisions
+UMask=0027
+LoadCredential=decision.key:/etc/iou-ai/credentials/decision.key
+ExecStart=/opt/iou-ai/current/.venv/bin/iou-ai-decisions --events /var/lib/iou-ai/events --inbox /var/lib/iou-ai-decisions/inbox --archive /var/lib/iou-ai-decisions/archive --key-file /run/credentials/iou-ai-decision-import.service/decision.key
+
+# Verification and archival are deliberately offline. An accepted decision can
+# authorize only the later offline-validation gate; this unit cannot compile,
+# execute, enqueue, promote, or touch the AFL/Nyx fleet.
+ReadOnlyPaths=/opt/iou-ai /var/lib/iou-ai/events /var/lib/iou-ai-decisions/inbox
+ReadWritePaths=/var/lib/iou-ai-decisions/archive
+InaccessiblePaths=/etc/iou-ai/credentials /var/lib/iou-ai-notify /var/lib/iou-ai/quarantine /var/lib/iou-ai/contracts /var/lib/iou-ai/runtime /var/lib/iou-ai/inbox /var/lib/iou-ai/lkml /var/lib/iou-ai/export -/var/lib/iou-ai-canary -/opt/iou-ai-canary
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+PrivateNetwork=true
+NoNewPrivileges=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+ProtectControlGroups=true
+ProtectClock=true
+ProtectHostname=true
+ProtectProc=invisible
+ProcSubset=pid
+RestrictNamespaces=true
+RestrictSUIDSGID=true
+RestrictRealtime=true
+LockPersonality=true
+MemoryDenyWriteExecute=true
+CapabilityBoundingSet=
+AmbientCapabilities=
+RestrictAddressFamilies=AF_UNIX
+Nice=19
+IOSchedulingClass=idle
+CPUQuota=5%
+MemoryMax=256M
+TasksMax=32
+TimeoutStartSec=2min

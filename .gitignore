@@ -1,0 +1,18 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.venv/
+build/
+dist/
+state/
+secrets/
+relay/cloudflare/wrangler.toml
+*.sqlite3
+*.sqlite3-*
+
+# local working state / build provenance (not part of the release)
+authority-local/
+scratch.tar
+wheelcheck/
+last-rejected-proposal.json

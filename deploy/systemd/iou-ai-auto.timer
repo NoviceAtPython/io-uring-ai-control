@@ -1,0 +1,15 @@
+[Unit]
+Description=Unattended io_uring AI canary/approve/promote cycle
+
+[Timer]
+# Offset from the hourly shadow timer so a freshly compiled artifact is already
+# in quarantine when this runs, and the two never contend for the box.
+OnBootSec=45m
+OnUnitActiveSec=2h
+RandomizedDelaySec=5m
+AccuracySec=1m
+Persistent=true
+Unit=iou-ai-auto.service
+
+[Install]
+WantedBy=timers.target

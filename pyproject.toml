@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools==83.0.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "io-uring-ai-control"
+version = "0.1.38"
+description = "Fail-closed AI planning control plane for the U-M io_uring fuzzing campaign"
+requires-python = ">=3.12"
+dependencies = ["pydantic==2.13.4"]
+
+[project.scripts]
+iou-ai = "iou_ai.cli:main"
+iou-ai-telemetry = "iou_ai.telemetry:main"
+iou-ai-contract = "iou_ai.contract:main"
+iou-ai-events = "iou_ai.event_cli:main"
+iou-ai-decisions = "iou_ai.decision_cli:main"
+iou-ai-notify = "iou_ai.notify_cli:main"
+iou-ai-canary = "iou_ai.canary_cli:main"
+iou-ai-promoter = "iou_ai.promoter_cli:main"
+iou-ai-approve = "iou_ai.approve_cli:main"
+iou-ai-corpus-profile = "iou_ai.corpus_profile:main"
+
+
+[tool.setuptools.packages.find]
+where = ["src"]

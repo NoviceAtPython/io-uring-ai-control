@@ -1,0 +1,53 @@
+{
+  "schema_version": "planner-proposal.v1",
+  "proposal_id": "proposal:mock-shadow-001",
+  "packet_id": "packet:mock-20260716t060000z",
+  "target_hashes": {
+    "harness_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "compiler_hash": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "op_table_hash": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "fleet_config_hash": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+  },
+  "hypothesis": {
+    "claim": "A short linked read lifecycle can test the underrepresented stable frontier without increasing sequence depth.",
+    "evidence_refs": ["evidence:coverage-read-link-plateau"],
+    "expected_signal": "A reproducible stable path appears after bounded local variation."
+  },
+  "abstain": false,
+  "abstain_reason": "",
+  "analysis_only": false,
+  "research_priorities": [],
+  "programs": [
+    {
+      "program_id": "read_link_probe",
+      "objective": "Probe a bounded linked read in the stable coverage lane.",
+      "lane": "stable_coverage",
+      "ring_profile_id": "default",
+      "resources": [
+        {"resource_ref": "file_a", "resource_kind": "file", "quantity": 1},
+        {"resource_ref": "buffer_a", "resource_kind": "buffer", "quantity": 1}
+      ],
+      "steps": [
+        {
+          "step_id": "read_a",
+          "ordinal": 0,
+          "operation": "read",
+          "ring_ref": "default",
+          "arguments": [
+            {"name": "file", "kind": "resource", "integer_value": 0, "boolean_value": false, "symbol_value": "", "resource_ref": "file_a"},
+            {"name": "buffer", "kind": "resource", "integer_value": 0, "boolean_value": false, "symbol_value": "", "resource_ref": "buffer_a"},
+            {"name": "length", "kind": "integer", "integer_value": 64, "boolean_value": false, "symbol_value": "", "resource_ref": ""},
+            {"name": "offset", "kind": "integer", "integer_value": 0, "boolean_value": false, "symbol_value": "", "resource_ref": ""}
+          ],
+          "flags": ["iosqe_io_link"],
+          "link_mode": "link",
+          "expected_result_classes": ["success", "short_io"]
+        }
+      ],
+      "perturbations": [],
+      "requested_local_variants": 8,
+      "expected_signals": ["Stable path novelty survives clean-reset replay."],
+      "safety_notes": ["This is semantic mock data and cannot be compiled for production."]
+    }
+  ]
+}

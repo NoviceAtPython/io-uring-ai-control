@@ -1,0 +1,13 @@
+[Unit]
+Description=Hourly meaningful-evidence gate for io_uring AI shadow planner
+
+[Timer]
+OnBootSec=20m
+OnUnitActiveSec=1h
+RandomizedDelaySec=3m
+AccuracySec=1m
+Persistent=true
+Unit=iou-ai-shadow.service
+
+[Install]
+WantedBy=timers.target

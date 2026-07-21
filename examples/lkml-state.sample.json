@@ -1,0 +1,9 @@
+{
+  "feed_url": "https://lore.kernel.org/io-uring/new.atom",
+  "feed_updated": "2026-07-15T15:25:45Z",
+  "last_successful_poll": "2026-07-16T08:00:00Z",
+  "schema_version": "lkml-state.v1",
+  "seen_message_id_sha256": [
+    "0d3dc551e2db9f061e6f56563c0cec5ddfa443adc5f2ee1f3f435e155b60c46f"
+  ]
+}

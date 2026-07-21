@@ -1,0 +1,122 @@
+{
+  "schema_version": "telemetry.v1",
+  "packet_id": "packet:mock-20260716t060000z",
+  "packet_hash": "sha256:c332d4d6da574c8e462da58ab3f7190d6bcea63e878ff0ed56c4931182b6da1d",
+  "generated_at": "2026-07-16T06:00:00Z",
+  "fleet_id": "fleet:mock-nyx",
+  "campaign_id": "campaign:mock-shadow",
+  "kernel_release": "5.10.73-mock",
+  "target_hashes": {
+    "harness_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "compiler_hash": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "op_table_hash": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "fleet_config_hash": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+  },
+  "window": {
+    "start_at": "2026-07-15T06:00:00Z",
+    "end_at": "2026-07-16T06:00:00Z",
+    "duration_seconds": 86400
+  },
+  "fleet": {
+    "workers_expected": 10,
+    "workers_running": 10,
+    "workers_stalled": 0,
+    "executions_total": 48201931,
+    "executions_per_second_milli": 557893,
+    "queue_entries": 21842,
+    "favored_entries": 1158,
+    "pending_entries": 86
+  },
+  "coverage": {
+    "paths_total": 21842,
+    "paths_new_in_window": 71,
+    "edges_total": 39411,
+    "edges_new_in_window": 19,
+    "bitmap_density_ppm": 74231,
+    "corpus_bytes_total": 12034752,
+    "corpus_entry_bytes_p50": 384,
+    "corpus_entry_bytes_p95": 1584
+  },
+  "lane_summaries": [
+    {
+      "lane": "stable_coverage",
+      "workers_running": 7,
+      "executions_total": 35915072,
+      "executions_per_second_milli": 415683,
+      "queue_entries": 17690,
+      "paths_new_in_window": 68,
+      "novel_outcomes_in_window": 0,
+      "timeout_count": 38,
+      "instability_ppm": 312
+    },
+    {
+      "lane": "probabilistic_race",
+      "workers_running": 3,
+      "executions_total": 12286859,
+      "executions_per_second_milli": 142210,
+      "queue_entries": 4152,
+      "paths_new_in_window": 3,
+      "novel_outcomes_in_window": 1,
+      "timeout_count": 441,
+      "instability_ppm": 18340
+    }
+  ],
+  "outcome_classes": [
+    {
+      "outcome_class": "normal_completion",
+      "count": 48167102,
+      "reproducible_count": 48167102
+    },
+    {
+      "outcome_class": "timeout",
+      "count": 479,
+      "reproducible_count": 38
+    },
+    {
+      "outcome_class": "novel_nonfatal_signal",
+      "count": 1,
+      "reproducible_count": 0
+    }
+  ],
+  "evidence": [
+    {
+      "evidence_ref": "evidence:coverage-read-link-plateau",
+      "kind": "coverage_delta",
+      "summary": "Stable coverage gains are concentrated in short read and link sequences while longer chains plateaued.",
+      "observation_count": 71
+    },
+    {
+      "evidence_ref": "evidence:race-timeout-cancel-signal",
+      "kind": "race_signal",
+      "summary": "One nonfatal race-lane outcome followed timeout and cancellation ordering and did not reproduce in five local attempts.",
+      "observation_count": 1
+    },
+    {
+      "evidence_ref": "evidence:corpus-long-tail",
+      "kind": "corpus_shape",
+      "summary": "The upper corpus-size tail remains below the input cap and contributes few favored entries.",
+      "observation_count": 1158
+    }
+  ],
+  "prior_proposal_outcomes": [
+    {
+      "proposal_id": "proposal:mock-previous-001",
+      "outcome": "coverage_gain",
+      "executions": 104218,
+      "paths_gained": 4,
+      "novel_outcomes": 0,
+      "summary": "Short linked reads produced four stable paths without increasing instability."
+    }
+  ],
+  "externalization": {
+    "redaction_version": "redaction:v1",
+    "sanitized_for_external_api": true,
+    "contains_raw_logs": false,
+    "contains_seed_bytes": false,
+    "contains_source_code": false,
+    "contains_filesystem_paths": false,
+    "contains_usernames": false,
+    "contains_credentials": false,
+    "contains_crash_traces": false
+  }
+}

@@ -1,0 +1,112 @@
+# Installed as /etc/iou-ai/config.toml. Pricing expires deliberately so stale
+# rates cannot silently weaken the ledger. Budget cap: $25/month hard limit +
+# $2/day burst limit (runaway protection, not a spend target).
+[budget]
+database = "/var/lib/iou-ai/runtime/budget.sqlite3"
+hard_limit_usd = "25.00"
+warning_usd = ["18.00", "22.00"]
+daily_limit_usd = "4.00"
+kill_switch = "/var/lib/iou-ai/runtime/AI_CALLS_DISABLED"
+
+[runtime]
+mode = "shadow"
+state_dir = "/var/lib/iou-ai/runtime"
+quarantine_dir = "/var/lib/iou-ai/quarantine"
+artifact_dir = "/var/lib/iou-ai/artifacts"
+trigger_state_file = "/var/lib/iou-ai/runtime/trigger-state.json"
+trigger_refresh_seconds = 172800
+trigger_retry_seconds = 172800
+telemetry_file = "/var/lib/iou-ai/inbox/telemetry.json"
+harness_contract_file = "/var/lib/iou-ai/contracts/harness-contract.production.json"
+# The un-gated (typed) contract is ~62 KB; with telemetry + LKML evidence the
+# planner request is ~85 KB, so the request byte cap is raised to 128 KB. This
+# only bounds request SIZE; per-call token cost is unchanged (max_input_tokens
+# still drives the budget reservation, so the daily cap is unaffected).
+max_packet_bytes = 131072
+max_response_bytes = 65536
+
+[events]
+enabled = true
+outbox_dir = "/var/lib/iou-ai/events"
+execution_candidate_dir = "/var/lib/iou-ai-execution/candidates"
+projector_state_file = "/var/lib/iou-ai/runtime/event-projector-state.json"
+decision_archive_dir = "/var/lib/iou-ai-decisions/archive"
+# 24h approval window: the campaign runs unmonitored and pings aedyn, who may
+# only see the Telegram request hours later. A one-time nonce-bound challenge for
+# an immutable, already-canaried artifact is safe to leave open this long.
+decision_ttl_minutes = 1440
+
+[planner]
+name = "openai"
+endpoint = "https://api.openai.com/v1/responses"
+model = "gpt-5.6-sol"
+credential_file = "/run/credentials/iou-ai-shadow.service/openai.key"
+monthly_call_limit = 30
+max_input_tokens = 20000
+max_output_tokens = 16000
+input_usd_per_million = "5.00"
+output_usd_per_million = "30.00"
+pricing_version = "2026-07-16-direct"
+pricing_effective = "2026-07-16"
+pricing_expires = "2026-08-16"
+# The planner produces only an inert, locally validated proposal. Medium is
+# the latency/quality balance; Claude and the deterministic gates remain
+# independent high-assurance checks.
+reasoning_effort = "medium"
+request_timeout_seconds = 600
+
+[reviewer]
+name = "anthropic"
+endpoint = "https://api.anthropic.com/v1/messages"
+model = "claude-sonnet-5"
+credential_file = "/run/credentials/iou-ai-shadow.service/anthropic.key"
+monthly_call_limit = 30
+max_input_tokens = 20000
+max_output_tokens = 16000
+input_usd_per_million = "3.00"
+output_usd_per_million = "15.00"
+pricing_version = "2026-07-16-post-intro-ceiling"
+pricing_effective = "2026-07-16"
+pricing_expires = "2026-08-16"
+reasoning_effort = "high"
+request_timeout_seconds = 300
+
+[auditor]
+enabled = true
+sample_every = 8
+
+[auditor.provider]
+name = "anthropic"
+endpoint = "https://api.anthropic.com/v1/messages"
+model = "claude-fable-5"
+credential_file = "/run/credentials/iou-ai-shadow.service/anthropic.key"
+monthly_call_limit = 4
+max_input_tokens = 20000
+max_output_tokens = 16000
+input_usd_per_million = "10.00"
+output_usd_per_million = "50.00"
+pricing_version = "2026-07-16-direct"
+pricing_effective = "2026-07-16"
+pricing_expires = "2026-08-16"
+reasoning_effort = "high"
+
+# Ordered planner failover. When the OpenAI planner declines (e.g. an
+# intermittent cyber_policy HTTP 400) or times out, the pipeline retries the
+# SAME request on Claude Opus 4.8 under Anthropic's own policy. If it also
+# declines, the cycle fails closed. Every downstream gate (Claude review,
+# deterministic validation, isolated canary, human approval) is unchanged.
+[[planner_fallback]]
+name = "anthropic"
+endpoint = "https://api.anthropic.com/v1/messages"
+model = "claude-opus-4-8"
+credential_file = "/run/credentials/iou-ai-shadow.service/anthropic.key"
+monthly_call_limit = 20
+max_input_tokens = 20000
+max_output_tokens = 16000
+input_usd_per_million = "5.00"
+output_usd_per_million = "25.00"
+pricing_version = "2026-07-19-direct"
+pricing_effective = "2026-07-19"
+pricing_expires = "2026-08-19"
+reasoning_effort = "high"
+request_timeout_seconds = 300

@@ -1,0 +1,16 @@
+name = "iou-ai-notify-relay"
+main = "src/index.js"
+compatibility_date = "2026-07-16"
+workers_dev = true
+
+[[d1_databases]]
+binding = "DB"
+database_name = "iou-ai-notify-relay"
+database_id = "REPLACE_WITH_D1_DATABASE_ID"
+
+# Configure every sensitive value as a Cloudflare secret; never add them here.
+# Choose exactly one provider:
+#   Telegram: RELAY_PROVIDER=telegram, FUZZ_RELAY_TOKEN, DECISION_HMAC_KEY,
+#             TELEGRAM_BOT_TOKEN, TELEGRAM_WEBHOOK_SECRET
+#   Telnyx:   RELAY_PROVIDER=telnyx, FUZZ_RELAY_TOKEN, DECISION_HMAC_KEY,
+#             TELNYX_API_KEY, TELNYX_PUBLIC_KEY, TELNYX_FROM, ALERT_TO

@@ -1,0 +1,373 @@
+{
+  "schema_version": "harness-contract.v1",
+  "contract_id": "harness:mock-test-only-v1",
+  "generated_at": "2026-07-16T06:00:00Z",
+  "environment": "mock",
+  "verified": true,
+  "test_only": true,
+  "verified_by": "verifier:mock-fixture",
+  "verification_evidence_hash": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+  "source_revision_hash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+  "target_hashes": {
+    "harness_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "compiler_hash": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "op_table_hash": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "fleet_config_hash": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+  },
+  "input_max_bytes": 2048,
+  "operation_max_count": 96,
+  "operation_selector_modulus": 61,
+  "deterministic_compiler": true,
+  "decode_round_trip_verified": true,
+  "profiles": [
+    {
+      "profile_id": "default",
+      "selector_value": 0,
+      "setup_flags": [],
+      "allowed_lanes": [
+        "stable_coverage",
+        "probabilistic_race"
+      ],
+      "summary": "Mock default ring profile for local contract and pipeline tests only."
+    },
+    {
+      "profile_id": "defer_taskrun",
+      "selector_value": 1,
+      "setup_flags": [
+        "ioring_setup_defer_taskrun"
+      ],
+      "allowed_lanes": [
+        "stable_coverage",
+        "probabilistic_race"
+      ],
+      "summary": "Mock deferred task-run profile for local contract and pipeline tests only."
+    }
+  ],
+  "resources": [
+    {
+      "resource_kind": "file",
+      "lifetime": "program",
+      "max_instances": 8,
+      "summary": "Mock file descriptor selected from an isolated fixture table."
+    },
+    {
+      "resource_kind": "buffer",
+      "lifetime": "program",
+      "max_instances": 8,
+      "summary": "Mock bounded data buffer allocated by the deterministic compiler."
+    },
+    {
+      "resource_kind": "timespec",
+      "lifetime": "step",
+      "max_instances": 8,
+      "summary": "Mock bounded timeout value represented as a resource reference."
+    },
+    {
+      "resource_kind": "request",
+      "lifetime": "step",
+      "max_instances": 64,
+      "summary": "Mock prior request reference used only by cancellation operations."
+    }
+  ],
+  "flags": [
+    {
+      "symbol": "iosqe_io_link",
+      "bit_value": 1,
+      "summary": "Mock link flag; bit assignment is fixture data and is not production-authoritative."
+    },
+    {
+      "symbol": "iosqe_io_hardlink",
+      "bit_value": 2,
+      "summary": "Mock hard-link flag; bit assignment is fixture data and is not production-authoritative."
+    },
+    {
+      "symbol": "iosqe_async",
+      "bit_value": 4,
+      "summary": "Mock async flag; bit assignment is fixture data and is not production-authoritative."
+    }
+  ],
+  "operations": [
+    {
+      "symbol": "nop",
+      "selector_modulus_value": 0,
+      "arguments": [],
+      "allowed_flags": [
+        "iosqe_io_link",
+        "iosqe_io_hardlink",
+        "iosqe_async"
+      ],
+      "allowed_profiles": [
+        "default",
+        "defer_taskrun"
+      ],
+      "allowed_lanes": [
+        "stable_coverage",
+        "probabilistic_race"
+      ],
+      "expected_result_classes": [
+        "success",
+        "cancelled"
+      ],
+      "summary": "Mock no-operation entry used for local deterministic pipeline tests."
+    },
+    {
+      "symbol": "read",
+      "selector_modulus_value": 1,
+      "arguments": [
+        {
+          "name": "file",
+          "kind": "resource",
+          "byte_width": 1,
+          "signed": false,
+          "byte_order": "little",
+          "minimum_value": 0,
+          "maximum_value": 7,
+          "enum_symbols": [],
+          "resource_kind": "file",
+          "summary": "Index into the mock file resource table."
+        },
+        {
+          "name": "buffer",
+          "kind": "resource",
+          "byte_width": 1,
+          "signed": false,
+          "byte_order": "little",
+          "minimum_value": 0,
+          "maximum_value": 7,
+          "enum_symbols": [],
+          "resource_kind": "buffer",
+          "summary": "Index into the mock buffer resource table."
+        },
+        {
+          "name": "length",
+          "kind": "integer",
+          "byte_width": 2,
+          "signed": false,
+          "byte_order": "little",
+          "minimum_value": 1,
+          "maximum_value": 2048,
+          "enum_symbols": [],
+          "resource_kind": "",
+          "summary": "Bounded mock read length."
+        },
+        {
+          "name": "offset",
+          "kind": "integer",
+          "byte_width": 4,
+          "signed": true,
+          "byte_order": "little",
+          "minimum_value": -1,
+          "maximum_value": 4096,
+          "enum_symbols": [],
+          "resource_kind": "",
+          "summary": "Bounded mock file offset where minus one selects current position."
+        }
+      ],
+      "allowed_flags": [
+        "iosqe_io_link",
+        "iosqe_io_hardlink",
+        "iosqe_async"
+      ],
+      "allowed_profiles": [
+        "default",
+        "defer_taskrun"
+      ],
+      "allowed_lanes": [
+        "stable_coverage",
+        "probabilistic_race"
+      ],
+      "expected_result_classes": [
+        "success",
+        "short_io",
+        "retry",
+        "invalid",
+        "cancelled"
+      ],
+      "summary": "Mock bounded read operation for local pipeline tests."
+    },
+    {
+      "symbol": "write",
+      "selector_modulus_value": 2,
+      "arguments": [
+        {
+          "name": "file",
+          "kind": "resource",
+          "byte_width": 1,
+          "signed": false,
+          "byte_order": "little",
+          "minimum_value": 0,
+          "maximum_value": 7,
+          "enum_symbols": [],
+          "resource_kind": "file",
+          "summary": "Index into the mock file resource table."
+        },
+        {
+          "name": "buffer",
+          "kind": "resource",
+          "byte_width": 1,
+          "signed": false,
+          "byte_order": "little",
+          "minimum_value": 0,
+          "maximum_value": 7,
+          "enum_symbols": [],
+          "resource_kind": "buffer",
+          "summary": "Index into the mock buffer resource table."
+        },
+        {
+          "name": "length",
+          "kind": "integer",
+          "byte_width": 2,
+          "signed": false,
+          "byte_order": "little",
+          "minimum_value": 1,
+          "maximum_value": 2048,
+          "enum_symbols": [],
+          "resource_kind": "",
+          "summary": "Bounded mock write length."
+        },
+        {
+          "name": "offset",
+          "kind": "integer",
+          "byte_width": 4,
+          "signed": true,
+          "byte_order": "little",
+          "minimum_value": -1,
+          "maximum_value": 4096,
+          "enum_symbols": [],
+          "resource_kind": "",
+          "summary": "Bounded mock file offset where minus one selects current position."
+        }
+      ],
+      "allowed_flags": [
+        "iosqe_io_link",
+        "iosqe_io_hardlink",
+        "iosqe_async"
+      ],
+      "allowed_profiles": [
+        "default",
+        "defer_taskrun"
+      ],
+      "allowed_lanes": [
+        "stable_coverage",
+        "probabilistic_race"
+      ],
+      "expected_result_classes": [
+        "success",
+        "short_io",
+        "retry",
+        "invalid",
+        "cancelled"
+      ],
+      "summary": "Mock bounded write operation for local pipeline tests."
+    },
+    {
+      "symbol": "timeout",
+      "selector_modulus_value": 3,
+      "arguments": [
+        {
+          "name": "duration",
+          "kind": "resource",
+          "byte_width": 1,
+          "signed": false,
+          "byte_order": "little",
+          "minimum_value": 0,
+          "maximum_value": 7,
+          "enum_symbols": [],
+          "resource_kind": "timespec",
+          "summary": "Index into bounded mock timeout resources."
+        },
+        {
+          "name": "absolute",
+          "kind": "boolean",
+          "byte_width": 1,
+          "signed": false,
+          "byte_order": "little",
+          "minimum_value": 0,
+          "maximum_value": 1,
+          "enum_symbols": [],
+          "resource_kind": "",
+          "summary": "Whether the mock timeout uses absolute-time semantics."
+        }
+      ],
+      "allowed_flags": [
+        "iosqe_io_link",
+        "iosqe_io_hardlink",
+        "iosqe_async"
+      ],
+      "allowed_profiles": [
+        "default",
+        "defer_taskrun"
+      ],
+      "allowed_lanes": [
+        "stable_coverage",
+        "probabilistic_race"
+      ],
+      "expected_result_classes": [
+        "timeout",
+        "cancelled",
+        "invalid"
+      ],
+      "summary": "Mock bounded timeout operation for ordering tests."
+    },
+    {
+      "symbol": "cancel",
+      "selector_modulus_value": 4,
+      "arguments": [
+        {
+          "name": "target",
+          "kind": "resource",
+          "byte_width": 1,
+          "signed": false,
+          "byte_order": "little",
+          "minimum_value": 0,
+          "maximum_value": 63,
+          "enum_symbols": [],
+          "resource_kind": "request",
+          "summary": "Index of a prior mock request eligible for cancellation."
+        },
+        {
+          "name": "mode",
+          "kind": "enum",
+          "byte_width": 1,
+          "signed": false,
+          "byte_order": "little",
+          "minimum_value": 0,
+          "maximum_value": 1,
+          "enum_symbols": [
+            "single",
+            "all"
+          ],
+          "resource_kind": "",
+          "summary": "Mock cancellation selection mode."
+        }
+      ],
+      "allowed_flags": [
+        "iosqe_io_link",
+        "iosqe_io_hardlink",
+        "iosqe_async"
+      ],
+      "allowed_profiles": [
+        "default",
+        "defer_taskrun"
+      ],
+      "allowed_lanes": [
+        "stable_coverage",
+        "probabilistic_race"
+      ],
+      "expected_result_classes": [
+        "success",
+        "not_found",
+        "already_complete",
+        "invalid"
+      ],
+      "summary": "Mock cancellation operation for local ordering tests."
+    }
+  ],
+  "forbidden_profile_ids": [
+    "sqpoll"
+  ],
+  "notes": [
+    "MOCK TEST ONLY: this contract is fabricated and must never authorize production compilation or fleet import.",
+    "Production activation requires extraction from the exact deployed harness and compiler followed by round-trip verification."
+  ]
+}

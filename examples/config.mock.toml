@@ -1,0 +1,67 @@
+[budget]
+database = "../state/budget.sqlite3"
+hard_limit_usd = "7.50"
+warning_usd = ["5.50", "6.75"]
+kill_switch = "../state/AI_CALLS_DISABLED"
+
+[runtime]
+mode = "mock"
+state_dir = "../state"
+quarantine_dir = "../state/quarantine"
+artifact_dir = "../state/artifacts"
+trigger_state_file = "../state/trigger-state.json"
+trigger_refresh_seconds = 172800
+trigger_retry_seconds = 172800
+telemetry_file = "telemetry.sample.json"
+harness_contract_file = "harness-contract.mock.json"
+max_packet_bytes = 65536
+max_response_bytes = 65536
+
+[planner]
+name = "openai"
+endpoint = "https://api.openai.com/v1/responses"
+model = "gpt-5.6-sol"
+credential_file = "../secrets/openai.key"
+monthly_call_limit = 30
+max_input_tokens = 20000
+max_output_tokens = 16000
+input_usd_per_million = "5.00"
+output_usd_per_million = "30.00"
+pricing_version = "2026-07-16-direct"
+pricing_effective = "2026-07-16"
+pricing_expires = "2026-08-16"
+reasoning_effort = "high"
+
+[reviewer]
+name = "anthropic"
+endpoint = "https://api.anthropic.com/v1/messages"
+model = "claude-sonnet-5"
+credential_file = "../secrets/anthropic.key"
+monthly_call_limit = 30
+max_input_tokens = 20000
+max_output_tokens = 16000
+input_usd_per_million = "3.00"
+output_usd_per_million = "15.00"
+pricing_version = "2026-07-16-post-intro-ceiling"
+pricing_effective = "2026-07-16"
+pricing_expires = "2026-08-16"
+reasoning_effort = "high"
+
+[auditor]
+enabled = true
+sample_every = 8
+
+[auditor.provider]
+name = "anthropic"
+endpoint = "https://api.anthropic.com/v1/messages"
+model = "claude-fable-5"
+credential_file = "../secrets/anthropic.key"
+monthly_call_limit = 4
+max_input_tokens = 20000
+max_output_tokens = 16000
+input_usd_per_million = "10.00"
+output_usd_per_million = "50.00"
+pricing_version = "2026-07-16-direct"
+pricing_effective = "2026-07-16"
+pricing_expires = "2026-08-16"
+reasoning_effort = "high"

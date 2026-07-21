@@ -1,0 +1,26 @@
+[Unit]
+Description=Build external-safe io_uring fuzz telemetry
+Wants=iou-ai-export.service iou-ai-lkml.service
+After=iou-ai-export.service iou-ai-lkml.service
+ConditionPathExists=/var/lib/iou-ai/export/raw-stats/kernel-release
+ConditionPathExists=/var/lib/iou-ai/contracts/harness-contract.production.json
+
+[Service]
+Type=oneshot
+User=iou-ai
+Group=iou-ai
+UMask=0077
+ExecStart=/opt/iou-ai/current/.venv/bin/iou-ai-telemetry --stats-dir /var/lib/iou-ai/export/raw-stats --contract /var/lib/iou-ai/contracts/harness-contract.production.json --state /var/lib/iou-ai/runtime/telemetry-state.json --output /var/lib/iou-ai/inbox/telemetry.json --kernel-release-file /var/lib/iou-ai/export/raw-stats/kernel-release --lkml-state-dir /var/lib/iou-ai/lkml --feedback-dir /var/lib/iou-ai/runtime/review-feedback --corpus-profile /var/lib/iou-ai/export/raw-stats/operation-profile.json
+ReadOnlyPaths=/var/lib/iou-ai/export/raw-stats /var/lib/iou-ai/contracts /var/lib/iou-ai/lkml
+ReadWritePaths=/var/lib/iou-ai/runtime /var/lib/iou-ai/inbox
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+NoNewPrivileges=true
+RestrictAddressFamilies=AF_UNIX
+CapabilityBoundingSet=
+Nice=19
+IOSchedulingClass=idle
+CPUQuota=10%
+MemoryMax=512M

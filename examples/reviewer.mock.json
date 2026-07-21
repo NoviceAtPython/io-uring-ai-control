@@ -1,0 +1,14 @@
+{
+  "schema_version": "reviewer-verdict.v1",
+  "review_id": "review:mock-shadow-001",
+  "proposal_id": "proposal:mock-shadow-001",
+  "packet_id": "packet:mock-20260716t060000z",
+  "verdict": "accept",
+  "summary": "The semantic mock proposal is evidence-bound, typed, bounded, and suitable only for quarantine testing.",
+  "findings": [],
+  "checked_evidence_refs": ["evidence:coverage-read-link-plateau"],
+  "required_changes": [],
+  "residual_risk": "low",
+  "safe_for_quarantine": true
+}
+

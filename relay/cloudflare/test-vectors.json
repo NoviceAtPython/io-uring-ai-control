@@ -1,0 +1,14 @@
+{
+  "event": {
+    "schema_version": "redacted-event.v1",
+    "created_at": "2026-07-16T20:00:00Z",
+    "event_kind": "budget_threshold",
+    "severity": "warning",
+    "month": "2026-07",
+    "threshold_microdollars": 125000,
+    "effective_spend_microdollars": 125000,
+    "hard_limit_microdollars": 1005000,
+    "remaining_microdollars": 880000
+  },
+  "fixed_message": "IOU-AI BUDGET: monthly spend crossed $0.13; $0.88 remains of $1.01."
+}
