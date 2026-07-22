@@ -3,7 +3,7 @@ Description=Hourly meaningful-evidence gate for io_uring AI shadow planner
 
 [Timer]
 OnBootSec=20m
-OnUnitActiveSec=1h
+OnUnitActiveSec=30min
 RandomizedDelaySec=3m
 AccuracySec=1m
 Persistent=true

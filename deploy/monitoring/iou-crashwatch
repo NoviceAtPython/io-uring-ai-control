@@ -93,7 +93,12 @@ BUD=$(/opt/iou-ai/current/.venv/bin/iou-ai --config /etc/iou-ai/config.toml budg
 # Provider account balances are NOT queryable via API, so the actionable signal is
 # a call that FAILS for billing/quota reasons (surfaced by the 0.1.42 error words).
 FUNDS=""
-RECENT=$(journalctl -u iou-ai-shadow.service --since '-90 min' --no-pager 2>/dev/null | grep -iE 'blocked:.*(insufficient|quota|billing|credit|balance|payment|funds|unpaid)')
+# Match REAL provider billing/quota failures only. Deliberately excludes the
+# internal "monthly call quota exhausted" message (our own self-imposed per-model
+# cap, handled by failover + the dollar budget) so a config cap is never mislabeled
+# as the provider being out of funds. OpenAI's real signal is the exact token
+# "insufficient_quota"; Anthropic's is a credit/balance message; 402 is billing.
+RECENT=$(journalctl -u iou-ai-shadow.service --since '-90 min' --no-pager 2>/dev/null | grep -iE 'blocked:.*(insufficient_quota|credit|balance|billing|payment|unpaid|HTTP 402)' | grep -vi 'monthly call quota exhausted')
 echo "$RECENT" | grep -qi 'openai' && FUNDS="$FUNDS
 - OpenAI API refused a call for FUNDS/QUOTA reasons (likely out of credits). Top up: platform.openai.com/settings/organization/billing"
 echo "$RECENT" | grep -qi 'anthropic' && FUNDS="$FUNDS

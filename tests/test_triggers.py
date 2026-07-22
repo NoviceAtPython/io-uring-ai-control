@@ -55,6 +55,50 @@ def test_volatile_packet_fields_do_not_trigger_a_paid_run() -> None:
     assert material_digest(updated, contract) == material_digest(telemetry, contract)
 
 
+def test_routine_coverage_growth_does_not_trigger_but_anomalies_do() -> None:
+    # Regression: fresh kernel code finds new edges/paths constantly. Keying the
+    # trigger on that made the planner fire ~hourly and burn its monthly call
+    # quota on evidence with nothing new to target. Routine coverage growth and
+    # instability jitter must NOT change the scheduling material; a novel outcome
+    # (a potential bug) still must.
+    telemetry, contract = _fixtures()
+    baseline = material_digest(telemetry, contract)
+
+    grew = telemetry.model_copy(
+        update={
+            "coverage": telemetry.coverage.model_copy(
+                update={
+                    "edges_total": telemetry.coverage.edges_total + 5000,
+                    "edges_new_in_window": telemetry.coverage.edges_new_in_window + 137,
+                    "paths_new_in_window": telemetry.coverage.paths_new_in_window + 40,
+                }
+            ),
+            "lane_summaries": [
+                telemetry.lane_summaries[0].model_copy(
+                    update={
+                        "paths_new_in_window": telemetry.lane_summaries[0].paths_new_in_window + 99,
+                        "instability_ppm": telemetry.lane_summaries[0].instability_ppm + 250_000,
+                    }
+                ),
+                *telemetry.lane_summaries[1:],
+            ],
+        }
+    )
+    assert material_digest(grew, contract) == baseline, "routine coverage growth must not trigger a paid run"
+
+    anomaly = telemetry.model_copy(
+        update={
+            "lane_summaries": [
+                telemetry.lane_summaries[0].model_copy(
+                    update={"novel_outcomes_in_window": telemetry.lane_summaries[0].novel_outcomes_in_window + 1}
+                ),
+                *telemetry.lane_summaries[1:],
+            ],
+        }
+    )
+    assert material_digest(anomaly, contract) != baseline, "a novel outcome (potential bug) must still trigger"
+
+
 def test_new_kernel_mail_and_target_drift_change_material() -> None:
     telemetry, contract = _fixtures()
     baseline = material_digest(telemetry, contract)

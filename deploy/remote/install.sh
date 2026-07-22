@@ -8,7 +8,7 @@ if [ "$(id -u)" -ne 0 ]; then
 fi
 
 SOURCE=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)
-VERSION=0.1.45
+VERSION=0.1.46
 RELEASE=/opt/iou-ai/releases/$VERSION
 
 # Fail before changing deployment state when Ubuntu's split-out venv package is

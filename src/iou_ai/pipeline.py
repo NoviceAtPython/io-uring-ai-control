@@ -14,6 +14,7 @@ from pydantic import ValidationError
 from .artifacts import ArtifactError, ArtifactStore
 from .budget import (
     BudgetLedger,
+    QuotaExceeded,
     PricingPolicy,
     Reservation,
     Settlement,
@@ -410,7 +411,7 @@ class ShadowPipeline:
         ``_call`` so it is not billed.
         """
         candidates = ((self.planner, self.config.planner), *self.planner_fallbacks)
-        last_error: ProviderError | None = None
+        last_error: Exception | None = None
         for adapter, provider in candidates:
             try:
                 return self._call(
@@ -424,6 +425,14 @@ class ShadowPipeline:
                     principal_id=principal_id,
                 )
             except ProviderError as exc:
+                last_error = exc
+                continue
+            except QuotaExceeded as exc:
+                # This model has exhausted its OWN monthly call quota; a fallback
+                # provider has a separate quota, so advance instead of failing the
+                # whole cycle. (A global dollar-budget exhaustion is a different
+                # exception and still propagates immediately -- there is no point
+                # trying another model against the same shared dollar cap.)
                 last_error = exc
                 continue
         # Every candidate declined/failed. Re-raise the last provider error so a

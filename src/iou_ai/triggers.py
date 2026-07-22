@@ -39,7 +39,7 @@ class TriggerError(RuntimeError):
     """The scheduling state is unavailable, invalid, or concurrently leased."""
 
 
-TRIGGER_POLICY_VERSION = "meaningful-trigger.v1"
+TRIGGER_POLICY_VERSION = "meaningful-trigger.v2"
 _DIGEST_RE = re.compile(r"^sha256:[0-9a-f]{64}$")
 _STATE_KEYS = {
     "schema_version",
@@ -139,13 +139,20 @@ def meaningful_material(
         ),
         key=lambda item: item["outcome_class"],
     )
+    # Routine coverage growth is deliberately NOT a trigger. On fresh kernel code
+    # the fuzzer finds new edges/paths constantly, so keying on "found a new edge"
+    # made every run fire and burned the monthly call quota in ~a day, on evidence
+    # with nothing new to target. Only a NOVEL outcome (an anomaly / potential bug)
+    # per lane remains -- new paths and instability jitter are excluded. Coverage
+    # plateaus are still handled, but only by the slow periodic refresh, not as an
+    # instant trigger. New kernel-mail patches, target drift, crashes, and fleet
+    # transitions remain instant triggers (below), which is what "quick to the
+    # chase" actually needs.
     lane_states = sorted(
         (
             {
                 "lane": item.lane.value,
-                "has_new_paths": item.paths_new_in_window > 0,
                 "has_novel_outcome": item.novel_outcomes_in_window > 0,
-                "instability_band": min(item.instability_ppm // 10_000, 100),
             }
             for item in telemetry.lane_summaries
         ),
@@ -199,10 +206,8 @@ def meaningful_material(
             "workers_running": telemetry.fleet.workers_running,
             "workers_stalled": telemetry.fleet.workers_stalled,
         },
-        "coverage_state": {
-            "has_new_edges": telemetry.coverage.edges_new_in_window > 0,
-            "has_new_paths": telemetry.coverage.paths_new_in_window > 0,
-        },
+        # NOTE: routine coverage growth (edges/paths new in window) is intentionally
+        # omitted here -- see the lane_states comment above. It is not a trigger.
         "lane_states": lane_states,
         "non_normal_outcomes": non_normal_outcomes,
         "external_evidence": external_evidence,

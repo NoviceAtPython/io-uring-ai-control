@@ -343,6 +343,65 @@ class PipelineTests(unittest.TestCase):
             self.assertEqual(outcome.status, "quarantined")
             self.assertEqual(len(primary.requests), 1)  # primary tried exactly once
 
+    def test_planner_fails_over_when_primary_call_quota_is_exhausted(self) -> None:
+        # A per-model monthly call-quota exhaustion (CallQuotaError, raised by the
+        # ledger before the request) must fail over to a fallback provider that has
+        # its own quota -- not fail the whole cycle. Regression: hourly runs on
+        # fresh code exhausted the primary's quota and the run died instead of
+        # using Opus's headroom.
+        with tempfile.TemporaryDirectory() as directory:
+            temp = Path(directory)
+            config = load_config(ROOT / "examples" / "config.mock.toml")
+            fallback_provider = replace(
+                config.planner,
+                name="anthropic",
+                endpoint="https://api.anthropic.com/v1/messages",
+                model="claude-opus-4-8",
+                monthly_call_limit=20,
+            )
+            config = replace(
+                config,
+                planner=replace(config.planner, monthly_call_limit=0),  # exhausted
+                budget=replace(
+                    config.budget,
+                    database=temp / "budget.sqlite3",
+                    kill_switch=temp / "AI_CALLS_DISABLED",
+                ),
+                runtime=replace(
+                    config.runtime,
+                    state_dir=temp,
+                    quarantine_dir=temp / "quarantine",
+                ),
+                auditor=replace(config.auditor, enabled=False),
+                planner_fallbacks=(fallback_provider,),
+            )
+            telemetry, contract = load_inputs(
+                ROOT / "examples" / "telemetry.sample.json",
+                ROOT / "examples" / "harness-contract.mock.json",
+            )
+            primary = MockAdapter(
+                (ROOT / "examples" / "proposal.mock.json").read_text(encoding="utf-8")
+            )
+            fallback = MockAdapter(
+                (ROOT / "examples" / "proposal.mock.json").read_text(encoding="utf-8")
+            )
+            pipeline = ShadowPipeline(
+                config,
+                ledger=build_ledger(config),
+                planner=primary,
+                reviewer=MockAdapter(
+                    (ROOT / "examples" / "reviewer.mock.json").read_text(encoding="utf-8")
+                ),
+                planner_fallbacks=((fallback, fallback_provider),),
+                quarantine=QuarantineStore(temp / "quarantine"),
+            )
+
+            outcome = pipeline.run(telemetry, contract)
+            self.assertEqual(outcome.status, "quarantined")
+            # Primary was never even called -- its quota blocked the reservation.
+            self.assertEqual(len(primary.requests), 0)
+            self.assertEqual(len(fallback.requests), 1)
+
     def test_reviewer_validation_diagnostic_never_echoes_provider_values(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             temp = Path(directory)
