@@ -20,6 +20,12 @@ re-verifying the whole authority chain and failing closed.
 > LLM output is treated as data, never executed — it is only validated into bytes
 > that run inside sandboxed VMs.
 
+**Ongoing research project.** The novel part is the architecture — a hard,
+fail-closed boundary that lets an LLM steer kernel fuzzing without its output ever
+executing — and an open experiment into whether AI-directed, patch-targeted seeding
+beats undirected mutation on fresh code. See [`docs/RESEARCH.md`](docs/RESEARCH.md)
+for the framing, what's novel, and the honest open question.
+
 ## Pipeline at a glance
 
 ```mermaid
