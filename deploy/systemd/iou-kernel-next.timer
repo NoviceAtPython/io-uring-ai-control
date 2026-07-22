@@ -1,0 +1,11 @@
+[Unit]
+Description=Daily check for a newer io_uring-next kernel (rebuild+rotate only if advanced)
+
+[Timer]
+OnCalendar=*-*-* 05:30:00
+RandomizedDelaySec=30m
+Persistent=true
+Unit=iou-kernel-next.service
+
+[Install]
+WantedBy=timers.target

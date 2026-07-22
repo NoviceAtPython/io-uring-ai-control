@@ -1,0 +1,11 @@
+[Unit]
+Description=io_uring guest-kernel-next tracker (fetch/build/validate/rotate)
+ConditionPathExists=!/var/lib/iou-ai/runtime/KERNEL_NEXT_DISABLED
+
+[Service]
+Type=oneshot
+User=root
+ExecStart=/usr/local/bin/iou-kernel-next
+Nice=15
+IOSchedulingClass=idle
+TimeoutStartSec=45min
