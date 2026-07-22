@@ -3,6 +3,11 @@
 **A fail-closed, AI-guided control plane for coverage-guided fuzzing of the Linux
 `io_uring` subsystem.**
 
+[![CI](https://github.com/NoviceAtPython/io-uring-ai-control/actions/workflows/ci.yml/badge.svg)](https://github.com/NoviceAtPython/io-uring-ai-control/actions/workflows/ci.yml)
+[![License: PolyForm NC 1.0.0](https://img.shields.io/badge/license-PolyForm%20Noncommercial%201.0.0-blue.svg)](LICENSE)
+![Python](https://img.shields.io/badge/python-3.12%2B-blue.svg)
+![Tests](https://img.shields.io/badge/tests-211%20passing-brightgreen.svg)
+
 An LLM reads new `io_uring` patches from LKML, writes fuzzing programs targeting
 the changed logic, an independent model reviews them, a deterministic compiler
 turns them into bytes under a hash-pinned contract, an isolated Nyx VM proves each
@@ -11,9 +16,65 @@ and a promoter feeds it to a live AFL++/Nyx fuzzing fleet — every stage
 re-verifying the whole authority chain and failing closed.
 
 > Authorized defensive security research. Any confirmed memory-safety finding is
-> routed to the upstream maintainers through coordinated disclosure. LLM output is
-> treated as data, never executed — it is only validated into bytes that run
-> inside sandboxed VMs.
+> routed to the upstream maintainers through coordinated disclosure ([`SECURITY.md`](SECURITY.md)).
+> LLM output is treated as data, never executed — it is only validated into bytes
+> that run inside sandboxed VMs.
+
+## Pipeline at a glance
+
+```mermaid
+flowchart LR
+    LKML[LKML io_uring patch] --> P[Planner LLM]
+    P --> R[Independent reviewer]
+    R --> A[Sampled auditor]
+    A --> C[Deterministic compiler<br/>hash-pinned contract]
+    C --> Q[Quarantine]
+    Q --> K[Isolated Nyx canary<br/>throwaway VM]
+    K --> S[Signed approval<br/>human / console / auto]
+    S --> PR[Promoter]
+    PR --> F[Live AFL++/Nyx fleet<br/>foreign-sync inbox]
+    style K fill:#2d6,stroke:#161,color:#000
+    style S fill:#fd6,stroke:#a80,color:#000
+    style C fill:#6cf,stroke:#048,color:#000
+```
+
+Every arrow crosses a gate that independently re-verifies the immutable authority
+chain and **fails closed** on any drift. LLM output never executes on the host —
+only validated bytes run, and only inside the isolated VMs.
+
+## Project status
+
+A **running research campaign**, honestly reported — not a results claim.
+
+- Fuzzer: 10 workers, ~24k–31k exec/s, **~10,300 edges**, ~11.4B executions,
+  **0 crashes** (expected for a mature, syzbot-saturated subsystem — see
+  [`docs/METRICS.md`](docs/METRICS.md)).
+- Control plane: the full pipeline runs unattended and has closed the loop
+  end-to-end (AI-authored seed -> canary -> auto approval -> promotion, no human).
+- Open, measurable question: whether AI-directed seeds add coverage or
+  reproducible findings beyond the non-AI baseline. Tracked; not yet answered.
+
+The value on display here is the **engineering and safety architecture**, verified
+by CI. The bug hunt is a standing, patch-targeted shot, not a promise.
+
+## Quick start (control plane, no fuzzer needed)
+
+The control plane is pure Python and runs anywhere; the fuzzer/client it drives is
+host-specific and **not** bundled (see [`docs/FUZZER.md`](docs/FUZZER.md)).
+
+```bash
+git clone https://github.com/NoviceAtPython/io-uring-ai-control
+cd io-uring-ai-control
+python -m venv .venv && . .venv/bin/activate      # Windows: .venv\Scripts\activate
+pip install -e . pytest
+python -m pytest -q                                # 211 tests + 7 subtests
+```
+
+A fresh checkout does **nothing** on its own: with no config, no credentials, and
+no harness contract, every entry point fails closed rather than fuzzing or
+spending API budget. Host deployment (`deploy/remote/`) is a separate, deliberate
+step that provisions users, state directories, and systemd units but enables no
+timers and never touches a fuzzer.
 
 ---
 
