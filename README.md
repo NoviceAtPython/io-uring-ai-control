@@ -12,8 +12,8 @@ An LLM reads new `io_uring` patches from LKML, writes fuzzing programs targeting
 the changed logic, an independent model reviews them, a deterministic compiler
 turns them into bytes under a hash-pinned contract, an isolated Nyx VM proves each
 one safe, a signed approval (human *or* the machine's own policy) authorizes it,
-and a promoter feeds it to a live AFL++/Nyx fuzzing fleet — every stage
-re-verifying the whole authority chain and failing closed.
+and a promoter feeds it to a live AFL++/Nyx fuzzing fleet. Every stage
+re-verifying the whole authority chain and failing closed along the way.
 
 > Authorized defensive security research. Any confirmed memory-safety finding is
 > routed to the upstream maintainers through coordinated disclosure ([`SECURITY.md`](SECURITY.md)).
