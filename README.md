@@ -17,12 +17,12 @@ re-verifying the whole authority chain and failing closed.
 
 > Authorized defensive security research. Any confirmed memory-safety finding is
 > routed to the upstream maintainers through coordinated disclosure ([`SECURITY.md`](SECURITY.md)).
-> LLM output is treated as data, never executed — it is only validated into bytes
+> LLM output is treated as data. Never executed, it is only validated into bytes
 > that run inside sandboxed VMs.
 
-**Ongoing research project.** The novel part is the architecture — a hard,
+**Ongoing research project.** The novel part is the architecture, which is to say a hard,
 fail-closed boundary that lets an LLM steer kernel fuzzing without its output ever
-executing — and an open experiment into whether AI-directed, patch-targeted seeding
+executing; and an open experiment into whether AI-directed, patch-targeted seeding
 beats undirected mutation on fresh code. See [`docs/RESEARCH.md`](docs/RESEARCH.md)
 for the framing, what's novel, and the honest open question.
 
@@ -50,7 +50,7 @@ only validated bytes run, and only inside the isolated VMs.
 
 ## Project status
 
-A **running research campaign**, honestly reported — not a results claim.
+A **running research campaign**, honestly reported.
 
 - Fuzzer: 10 workers, ~24k–31k exec/s, KASAN-armed, **0 crashes to date**
   (expected for a heavily-fuzzed subsystem — see [`docs/METRICS.md`](docs/METRICS.md)).
@@ -65,7 +65,7 @@ A **running research campaign**, honestly reported — not a results claim.
   reproducible findings beyond the non-AI baseline. Tracked; not yet answered.
 
 The value on display here is the **engineering and safety architecture**, verified
-by CI. The bug hunt is a standing, fresh-code, patch-targeted shot — not a promise.
+by CI. The bug hunt is a standing, fresh-code, patch-targeted shot.
 
 ## Quick start (control plane, no fuzzer needed)
 
@@ -166,7 +166,7 @@ encoding the AI targets, and the hard-won landmines.
   a static allowlisted foreign-sync inbox.
 - **Signed, attributable approvals.** Decisions are HMAC-signed with distinct
   signer identities — `relay:telegram-v1` (phone), `operator:local-v1` (console),
-  `operator:auto-v1` (unattended policy) — so the audit trail never conflates a
+  `operator:auto-v1` (unattended policy) so the audit trail never conflates a
   human approval with a machine one.
 - **Bounded spend.** A SQLite ledger reserves worst-case cost before each call and
   hard-caps daily/monthly spend, with an operator kill switch.
