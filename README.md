@@ -46,16 +46,20 @@ only validated bytes run, and only inside the isolated VMs.
 
 A **running research campaign**, honestly reported — not a results claim.
 
-- Fuzzer: 10 workers, ~24k–31k exec/s, **~10,300 edges**, ~11.4B executions,
-  **0 crashes** (expected for a mature, syzbot-saturated subsystem — see
-  [`docs/METRICS.md`](docs/METRICS.md)).
+- Fuzzer: 10 workers, ~24k–31k exec/s, KASAN-armed, **0 crashes to date**
+  (expected for a heavily-fuzzed subsystem — see [`docs/METRICS.md`](docs/METRICS.md)).
+- **Targets fresh code:** the guest kernel tracks the newest `io_uring-next` dev
+  branch and auto-updates — a daily check rebuilds, validates boot in an isolated
+  VM, and rotates the fleet with backup + rollback, only when the branch advances.
 - Control plane: the full pipeline runs unattended and has closed the loop
-  end-to-end (AI-authored seed -> canary -> auto approval -> promotion, no human).
+  end-to-end (AI-authored seed -> canary -> auto approval -> promotion, no human);
+  the planner is steered toward async completion-ordering and resource-lifecycle
+  shapes (where io_uring memory-safety defects concentrate).
 - Open, measurable question: whether AI-directed seeds add coverage or
   reproducible findings beyond the non-AI baseline. Tracked; not yet answered.
 
 The value on display here is the **engineering and safety architecture**, verified
-by CI. The bug hunt is a standing, patch-targeted shot, not a promise.
+by CI. The bug hunt is a standing, fresh-code, patch-targeted shot — not a promise.
 
 ## Quick start (control plane, no fuzzer needed)
 
