@@ -16,3 +16,6 @@ authority-local/
 scratch.tar
 wheelcheck/
 last-rejected-proposal.json
+
+# Release artifacts belong in GitHub Releases, not the source tree.
+iou-ai-release-*.tar.gz
