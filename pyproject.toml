@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "io-uring-ai-control"
-version = "0.1.43"
+version = "0.1.44"
 description = "Fail-closed AI planning control plane for the U-M io_uring fuzzing campaign"
 requires-python = ">=3.12"
 dependencies = ["pydantic==2.13.4"]
@@ -19,6 +19,7 @@ iou-ai-notify = "iou_ai.notify_cli:main"
 iou-ai-canary = "iou_ai.canary_cli:main"
 iou-ai-promoter = "iou_ai.promoter_cli:main"
 iou-ai-approve = "iou_ai.approve_cli:main"
+iou-ai-repro = "iou_ai.repro_cli:main"
 iou-ai-corpus-profile = "iou_ai.corpus_profile:main"
 
 

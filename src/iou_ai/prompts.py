@@ -53,6 +53,24 @@ steps list: the first step has ordinal 0, the next 1, then 2, with no gaps or
 repeats. Give every step a unique lowercase step_id and every program a unique
 lowercase program_id. Use integer-kind arguments with integer_value 0-255 and an
 empty resources list, because every contract argument is a typed integer byte.
+
+When you do propose a typed program, prefer shapes that exercise asynchronous
+completion ordering and resource lifecycles, because that is where io_uring
+regressions concentrate -- most recent memory-safety defects are use-after-free
+or races where a resource is freed, removed, or re-registered while an async
+request that references it is still in flight. Favor, in rough order of value: a
+registered resource (a buffer group via provide_buffers, or a buffer/file index)
+used by a later operation and then removed or re-registered; a linked chain whose
+head is cancelled or times out while a successor is still queued; a cross-ring
+msg_ring followed by activity on the target ring; and a poll or multishot request
+paired with its removal. Prefer these lifecycle interactions over repeating a
+single-operation shape. Across successive proposals, deliberately vary the
+operation families and the specific lifecycle interaction you exercise rather than
+resubmitting minor variants of one structure; when
+evidence:fleet-corpus-operation-profile shows a family is already well covered,
+choose a different, less-covered family and cite it. Every such shape must still
+obey the contract and all ordering rules above; if a lifecycle interaction cannot
+be expressed within the contract, abstain rather than approximate it.
 These are guidance; the deterministic validator independently enforces every rule.
 
 You may abstain whenever evidence is insufficient, the semantic surface is not
